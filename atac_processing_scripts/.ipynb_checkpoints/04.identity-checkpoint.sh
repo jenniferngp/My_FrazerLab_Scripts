@@ -58,5 +58,5 @@ cmd="plink --threads 4 --bfile ${plink_dir}/merged --genome full --out ${plink_d
 print_exec "$cmd" $log
 
 # 6. clean and remove files
-cmd="rm ${plink_dir}/call.vcf.gz ${plink_dir}/call.vcf.gz.tbi ${plink_dir}/sample.txt"
+cmd="rm ${plink_dir}/call.vcf.gz ${plink_dir}/call.vcf.gz.tbi ${plink_dir}/sample.txt ${plink_dir}/merged*"
 print_exec "$cmd" $log

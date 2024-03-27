@@ -11,12 +11,12 @@ source activate encode-atac
 encode_dir=/frazer01/home/jennifer/software/encode-atac-seq-pipeline
 
 fq_dir=$1 # directory containing fastqs. example: /projects/CARDIPS/data/ATAC-Seq/sample
-uuid_list=$2 # 1-column list of uuids to process
+uuid_list=$2 # one-column list of uuids 
 uuid=`tail -n +$SGE_TASK_ID $uuid_list | head -1`
 out_dir=$3 # output directory. example: /projects/CARDIPS/pipeline/ATAC-Seq/sample_hg38
 out_dir=${out_dir}/${uuid}
 ref_saf=$4 # saf file containing reference peaks
-script_dir=$5 # directory containing scripts. example: /projects/CARDIPS/analysis/data_organization/upload/ppc/test/pipeline/scripts
+script_dir=$5 # directory containing atac processing scripts. example: /projects/CARDIPS/analysis/data_organization/scripts/atac_scripts
 
 functions_file=${script_dir}/functions.sh
 
@@ -55,7 +55,7 @@ qsub -N qc -o $log_out -e $log_err -V -cwd ${script_dir}/05.qc.sh $out_dir $log 
 
 # 6. Call peaks using MACS2
 log_out=${out_dir}/qc/frip.out
-log_err=${out_dir}/qc/frip.err
+log_err=${out_dir}/qc/frip.txt
 
 smoothwindow=150 # default on encode
 shiftsize=75

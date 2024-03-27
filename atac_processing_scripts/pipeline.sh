@@ -55,7 +55,7 @@ qsub -N qc -o $log_out -e $log_err -V -cwd ${script_dir}/05.qc.sh $out_dir $log 
 
 # 6. Call peaks using MACS2
 log_out=${out_dir}/qc/frip.out
-log_err=${out_dir}/qc/frip.err
+log_err=${out_dir}/qc/frip.txt
 
 smoothwindow=150 # default on encode
 shiftsize=75

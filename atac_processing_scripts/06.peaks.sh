@@ -38,20 +38,26 @@ print_exec "$cmd" $log
 # 2. remove peaks that overlap blacklist regions
 blacklist=/reference/public/ENCODE/hg38-blacklist.v2.bed
 filtered_peak=${out_dir}/peaks/narrow_peaks_noblacklist.narrowPeak
-bedtools intersect -v -a ${out_dir}/peaks/narrow_peaks.narrowPeak -b ${blacklist} | awk 'BEGIN{OFS="\t"} {if ($5>1000) $5=1000; print $0}' | grep -P 'chr[\dXY]+[ \t]'   > ${filtered_peak}
+bedtools intersect -v -a ${out_dir}/peaks/narrow_peaks.narrowPeak -b ${blacklist} | awk 'BEGIN{OFS="\t"} {if ($5>1000) $5=1000; print $0}' | grep -P 'chr[\dXY]+[ \t]'  > ${filtered_peak}
 
 # 3. run feature counts to get the number of reads per peak. Keep the log to obtain the FRIP metric.
-bam=${out_dir}/Aligned.sorted.filt.nodup.nomito.bam
 peak=${out_dir}/peaks/narrow_peaks_noblacklist.narrowPeak
 
-# convert bed to saf
+# 4. convert bed to saf for feature counts
 cmd="cat $peak | ${script_dir}/peaks2saf.pl > ${out_dir}/saf"
 print_exec "$cmd" $log
 
-# run feature counts
+# 5. run feature counts
 cmd="featureCounts -p --countReadPairs -B -C -T 4 -F SAF -a ${out_dir}/saf -o ${peak}.counts ${bam}"
 print_exec "$cmd" $log
 
-# clean
-cmd="rm ${out_dir}/saf"
+# 6. clean
+cmd="rm ${out_dir}/saf ${out_dir}/Aligned.sorted.bam{,.bai} ${out_dir}/Aligned.sorted.filt.nodup.bam{,.bai}"
+print_exec "$cmd" $log
+
+cmd="rm ${out_dir}/Aligned.sorted.filt.dupmark.flagstat ${out_dir}/qc ${out_dir}/qc/frip.out"
+print_exec "$cmd" $log
+
+# 7. convert bam to big wig
+cmd="bamCoverage -b $bam -o ${out_dir}/Aligned.sorted.filt.nodup.nomito.bw"
 print_exec "$cmd" $log
