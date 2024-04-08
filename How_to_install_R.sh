@@ -7,8 +7,8 @@ which curl
 export PATH=/usr/bin/:$PATH
 which curl
 
-# 3. Download an R.tar.gz file from https://cran.mtu.edu/
-wget $link
+# 3. Download an R.tar.gz file (https://cran.r-project.org/mirrors.html) - choose any mirror
+wget http://lib.stat.cmu.edu/R/CRAN/src/base/R-4/R-4.0.1.tar.gz
 
 # 4. Unzip 
 tar -xf R-4.0.1.tar.gz
@@ -22,7 +22,7 @@ cd R-4.0.1
 # 6. Build
 make && make install
 
-# 7. Export
+# 7. Export or add to your bash profile
 export PATH=~/software/R-4.0.1/bin:$PATH
 
 # 8. Open R to check that it works and the version is correct

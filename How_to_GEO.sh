@@ -26,4 +26,5 @@ mirror -R [path_to_submission_directory]
 # 9. Exit screen using Ctrl+A+D
 
 # 10. To go back to your screen session to check progress
+# If you forgot your screen_session_id, just run screen R and it'll list out all sessions that are active
 screen -R [screen_session_id]
