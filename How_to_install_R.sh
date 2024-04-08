@@ -27,3 +27,7 @@ export PATH=~/software/R-4.0.1/bin:$PATH
 
 # 8. Open R to check that it works and the version is correct
 R
+
+# 9. If you are doing single-cell analyses, HIGHLY HIGHLY recommend installing Seurat and Signac IMMEDIATELY. 
+# They have specific dependencies and often clash with other packages. 
+# Installing them down the line will cause a lot of problems and conflicts with other packages. 
