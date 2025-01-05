@@ -1,0 +1,25 @@
+#$ -pe smp 2
+#$ -V
+#$ -cwd
+#$ -e logs
+#$ -o logs
+
+hostname >& 2
+
+export PATH=/software/biobambam2-2.0.95/bin:/software/STAR-2.7.3a/bin/Linux_x86_64:/software/samtools-1.9:/software/sambamba_v0.6.7:$PATH
+
+if [ $# != 2 ]; then
+	echo "$0 IN_DIR OUT_DIR" >& 2;
+	exit 1;
+fi
+in_dir=$1
+out_dir=$2
+
+bed=/reference/private/Gencode.v34lift37/promoters.merged.bed
+
+if [ -f ${out_dir}/reads_in_promoter.txt ]; then continue; fi
+
+cmd="samtools view -c -L $bed ${in_dir}/Aligned.out.filt.bam > ${out_dir}/reads_in_promoter.txt" 
+echo $cmd; eval $cmd
+
+

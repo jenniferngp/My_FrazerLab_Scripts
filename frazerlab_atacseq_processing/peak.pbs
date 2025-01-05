@@ -1,0 +1,28 @@
+#$ -V
+#$ -cwd
+#$ -e logs
+#$ -o logs
+
+export PATH=/home/hiroko/Python-3.6.4/bin:$PATH
+export LD_LIBRARY_PATH=/home/hiroko/Python-3.6.4/lib:$LD_LIBRARY_PATH
+
+if [ $# -lt 3 ]; then
+	echo "$0 BAM NAME OUT_DIR [narrow]" >& 2;
+	exit 1;
+fi
+bam=$1; shift
+name=$1; shift
+out_dir=$1; shift
+if [ -n "$1" ]; then narrow=1; fi
+
+date >& 2
+
+cmd="macs2 callpeak -f BAMPE -g hs -t ${bam} -n ${name} --outdir ${out_dir} --nomodel --shift -100 --extsize 200"
+if [ -n "$narrow" ]; then
+	cmd="${cmd} --call-summits"
+else
+	cmd="${cmd} --broad"
+fi
+echo $cmd >& 2; eval $cmd
+
+date >& 2

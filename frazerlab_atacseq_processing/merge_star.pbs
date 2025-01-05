@@ -1,0 +1,34 @@
+#$ -pe smp 8
+#$ -V
+#$ -cwd
+#$ -e logs
+#$ -o logs
+
+hostname >& 2
+
+export PATH=/software/biobambam2-2.0.95/bin:/software/STAR-2.7.3a/bin/Linux_x86_64:/software/samtools-1.9:/software/sambamba_v0.6.7:$PATH
+
+if [ $# != 4 ]; then
+	echo "$0 ID R1 R2 OUT_DIR" >& 2;
+	exit 1;
+fi
+id=$1
+r1=$2
+r2=$3
+out_dir=$4
+
+reference=/reference/private/STAR/hg19_gencode34
+
+date >& 2
+
+cmd="STAR --runThreadN 8 --alignIntronMax 1 --genomeDir $reference \
+--genomeLoad NoSharedMemory --readFilesCommand zcat \
+--readFilesIn $r1 $r2 \
+--outSAMattributes All --outSAMunmapped Within \
+--outSAMattrRGline ID:1 PL:ILLUMINA PU:CARDIPS LB:${id} SM:${id} \
+--outFilterMultimapNmax 20 --outFilterMismatchNmax 999 --outFilterMismatchNoverLmax 0.04 \
+--seedSearchStartLmax 20 --outFilterScoreMinOverLread 0.1 --outFilterMatchNminOverLread 0.1 \
+--outSAMtype BAM Unsorted --outFileNamePrefix ${out_dir}/"
+echo $cmd >& 2; eval $cmd
+
+date >& 2

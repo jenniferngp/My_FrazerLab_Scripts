@@ -1,0 +1,57 @@
+#$ -pe smp 8
+#$ -V
+#$ -cwd
+#$ -e logs
+#$ -o logs
+
+hostname >& 2
+
+export PATH=/software/biobambam2-2.0.95/bin:/software/STAR-2.7.3a/bin/Linux_x86_64:/software/samtools-1.9:/software/sambamba_v0.6.7:$PATH
+
+if [ $# != 3 ]; then
+	echo "$0 IN_DIR OUT_DIR ID" >& 2;
+	exit 1;
+fi
+in_dir=$1
+out_dir=$2
+id=$3
+reference=/reference/private/STAR/hg19_gencode34
+dir=`mktemp -d -p /scratch`
+
+date >& 2
+
+r1=(`ls ${in_dir}/*_R1*.fastq.gz`)
+if [ ${#r1[@]} -gt 1 ]; then
+	cmd="cat ${r1[@]} > ${dir}/R1.fastq.gz"
+	echo $cmd >& 2; eval $cmd
+	date >& 2
+else
+	ln -s ${r1[0]} ${dir}/R1.fastq.gz
+fi
+
+r2=(`ls ${in_dir}/*_R2*.fastq.gz`)
+if [ ${#r2[@]} -gt 1 ]; then
+	cmd="cat ${r2[@]} > ${dir}/R2.fastq.gz"
+	echo $cmd >& 2; eval $cmd
+	date >& 2
+else
+	ln -s ${r2[0]} ${dir}/R2.fastq.gz
+fi
+
+cmd="STAR --runThreadN 8 --alignIntronMax 1 --genomeDir $reference \
+--genomeLoad NoSharedMemory --readFilesCommand zcat \
+--readFilesIn ${dir}/R1.fastq.gz ${dir}/R2.fastq.gz \
+--outSAMattributes All --outSAMunmapped Within \
+--outSAMattrRGline ID:1 PL:ILLUMINA PU:CARDIPS LB:${id} SM:${id} \
+--outFilterMultimapNmax 20 --outFilterMismatchNmax 999 --outFilterMismatchNoverLmax 0.04 \
+--seedSearchStartLmax 20 --outFilterScoreMinOverLread 0.1 --outFilterMatchNminOverLread 0.1 \
+--outSAMtype BAM Unsorted --outFileNamePrefix ${out_dir}/"
+echo $cmd >& 2; eval $cmd
+
+date >& 2
+
+cmd="rm -r ${dir}"
+echo $cmd >& 2
+$cmd
+
+date >& 2

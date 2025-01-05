@@ -1,0 +1,59 @@
+#$ -V
+#$ -cwd
+#$ -e logs
+#$ -o logs
+#$ -pe smp 8
+
+hostname >& 2
+
+export PATH=/software/tabix-0.2.6:/software/bcftools-1.9:/software/plink-1.90b3x:$PATH
+
+if [ $# != 2 ]; then
+	echo "$0 BAM OUT_DIR" >& 2;
+	exit 1;
+fi
+bam=$1
+out_dir=$2
+id=`basename $out_dir`
+dir=`mktemp -d -p scratch`
+#reference_vcf=/reference/private/CARDIPS/CARDIPS.GATK.autosome.common_snp.promoter.vcf.gz
+reference_vcf=/reference/private/CARDIPS/CARDIPS.GATK.autosome.common_snp.vcf.gz
+reference=/reference/public/hg19/hg19.fa
+
+date >& 2
+
+echo "$id target" > ${dir}/sample.txt
+cmd="bcftools mpileup -Ou -f $reference -R $reference_vcf --threads 2 $bam |\
+bcftools call --threads 4 -Ou -mv |\
+bcftools filter -e 'DP<10'  | bcftools reheader -s ${dir}/sample.txt |\
+awk 'BEGIN{OFS=\"\t\";} {if(\$1 !~ /^#/) {\$3=\$1\":\"\$2;} print;}' |\
+bgzip -c > ${dir}/call.vcf.gz"
+echo $cmd >& 2; eval $cmd
+
+date >& 2
+
+cmd="tabix -p vcf ${dir}/call.vcf.gz"
+echo $cmd >& 2; eval $cmd
+
+date >& 2
+
+cmd="bcftools merge ${dir}/call.vcf.gz $reference_vcf |\
+bcftools view --threads 6 -m2 -M2 -v snps -o ${dir}/merged.vcf.gz -O z"
+echo $cmd >& 2; eval $cmd
+
+date >& 2
+
+cmd="plink --threads 8 --vcf ${dir}/merged.vcf.gz --make-bed --out ${dir}/merged"
+echo $cmd >& 2; eval $cmd
+
+date >& 2
+
+cmd="plink --threads 8 --bfile ${dir}/merged --genome full --out ${out_dir}/plink"
+echo $cmd >& 2; eval $cmd
+
+date >& 2
+
+cmd="rm -r $dir"
+echo $cmd >& 2; eval $cmd
+
+date >& 2

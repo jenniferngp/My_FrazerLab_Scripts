@@ -1,0 +1,37 @@
+#$ -pe smp 4
+#$ -V
+#$ -cwd
+#$ -e logs
+#$ -o logs
+
+hostname >& 2
+
+export PATH=/projects/CARDIPS/pipeline/ATAC-Seq/script:/software/subread-1.5.0-Linux-x86_64/bin:$PATH
+
+if [ $# -ne 3 ]; then
+	echo "$0 BAM PEAK OUT_FILE" >& 2;
+	exit 1;
+fi
+bam=$1
+peak=$2
+out_file=$3
+
+dir=`mktemp -d -p ~/scratch`
+
+date >& 2
+
+cmd="cat $peak | peaks2saf.pl > ${dir}/saf"
+echo $cmd >& 2; eval $cmd
+
+date >& 2
+
+cmd="featureCounts -p -T 4 --donotsort -F SAF -a ${dir}/saf -o ${out_file} ${bam}"
+echo $cmd >& 2; eval $cmd
+
+date >& 2
+
+cmd="rm -r ${dir}"
+echo $cmd >& 2
+$cmd
+
+date >& 2

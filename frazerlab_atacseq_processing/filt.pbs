@@ -1,0 +1,91 @@
+#$ -pe smp 8
+#$ -V
+#$ -cwd
+#$ -e logs
+#$ -o logs
+
+export PATH=/software/samtools-1.9:$PATH
+
+if [ $# != 2 ]; then
+	echo "$0 BAM OUT_DIR" >& 2;
+fi
+bam=$1
+out_dir=$2
+name=`basename $bam ".bam"`
+dir=`mktemp -d -p /scratch`
+
+date >& 2
+
+cmd="samtools sort -n -m 2G -@ 8 $bam -o ${dir}/${name}.nsorted.bam"
+echo $cmd >& 2; eval $cmd
+
+date >& 2
+
+cmd="samtools fixmate -m -@ 8 ${dir}/${name}.nsorted.bam ${dir}/${name}.fixmate.bam"
+echo $cmd >& 2; eval $cmd
+
+date >& 2
+
+cmd="samtools sort -m 2G -@ 8 -o ${dir}/${name}.sorted.bam ${dir}/${name}.fixmate.bam"
+echo $cmd >& 2; eval $cmd
+
+date >& 2
+
+cmd="samtools markdup -@ 8 ${dir}/${name}.sorted.bam ${out_dir}/${name}.mdup.bam"
+echo $cmd >& 2; eval $cmd
+
+date >& 2
+
+cmd="samtools index -@ 8 ${out_dir}/${name}.mdup.bam"
+echo $cmd >& 2; eval $cmd
+
+date >& 2
+
+cmd="samtools flagstat -@ 8 ${out_dir}/${name}.mdup.bam > ${out_dir}/${name}.mdup.flagstat"
+echo $cmd >& 2; eval $cmd
+
+date >& 2
+
+cmd="samtools idxstats -@ 8 ${out_dir}/${name}.mdup.bam > ${out_dir}/${name}.mdup.idxstats"
+echo $cmd >& 2; eval $cmd
+
+date >& 2
+
+cmd="samtools stats -@ 8 ${out_dir}/${name}.mdup.bam > ${out_dir}/${name}.mdup.stats"
+echo $cmd >& 2; eval $cmd
+
+date >& 2
+
+cmd="samtools view ${out_dir}/${name}.mdup.bam | \
+awk 'function abs(v) {return v < 0 ? -v : v}; abs(\$9) < 38' |\
+wc -l > ${out_dir}/${name}.mdup.lt38 &"
+
+echo $cmd >& 2; eval $cmd
+
+cmd="samtools view ${out_dir}/${name}.mdup.bam | \
+awk 'function abs(v) {return v < 0 ? -v : v}; abs(\$9) > 2000' |\
+wc -l > ${out_dir}/${name}.mdup.gt2k &"
+
+echo $cmd >& 2; eval $cmd
+wait
+
+date >& 2
+
+chrs=(`seq 1 22` X Y)
+chrs=chr`echo ${chrs[@]} | sed 's/ / chr/g'`
+cmd="samtools view -h -q 20 -f 2 -F 1024 ${out_dir}/${name}.mdup.bam $chrs |\
+awk 'function abs(v) {return v < 0 ? -v : v}; substr(\$0,1,1)==\"@\" || (abs(\$9) >= 38 && abs(\$9) <= 2000)' |\
+samtools view -b -@ 4 > ${out_dir}/${name}.filt.bam"
+echo $cmd >& 2; eval $cmd
+
+date >& 2
+
+cmd="samtools index ${out_dir}/${name}.filt.bam"
+echo $cmd >& 2; eval $cmd
+
+date >& 2
+
+cmd="rm -r ${dir}"
+echo $cmd >& 2; eval $cmd
+
+date >& 2
